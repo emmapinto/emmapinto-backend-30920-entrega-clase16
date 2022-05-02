@@ -8,21 +8,32 @@ const io = require('socket.io')(server)
 
 const {engine} = require("express-handlebars")
 
+const { agregarProductos, listarProductos } = require('./controllers/producto')
 
-let messages = [
-];
+const { knexChat } = require("./db/config")
+const Messages = require('./controllers/chat')
 
-io.on("connection", async socket => {
-    console.log("Un cliente se ha conectado");
-    socket.emit("messages", messages); // emitir todos los mensajes a un cliente nuevo
-    
-    socket.on("new-message", function(data) {
-        messages.push(data); // agregar mensajes a array 
-        io.sockets.emit("messages", messages); //emitir a todos los clientes
-    });    
-});
 
-//Configuración para handlebars
+/********* Configuración para SOCKET.IO *********/
+
+const messagesApi = new Messages(knexChat, 'messages')
+
+io.on('connection', async (socket) => {
+	console.log('Se ha conectado un usuario')
+
+	// Envio los mensajes al cliente que se conectó
+	socket.emit('messages', await messagesApi.getAll())
+
+	// Escucho los mensajes enviados por el cliente y se los propago a todos
+	socket.on('new-message', async (data) => {
+		data.fyh = new Date().toLocaleString()
+		messagesApi.save(data)
+		io.sockets.emit('messages', await messagesApi.getAll())
+	})
+})
+
+/********* Configuración para HANDLEBARS *********/
+
 app.engine(
     "hbs",
     engine({
@@ -33,44 +44,25 @@ app.engine(
     })
 )
 
-app.set("view engine", "hbs");
-app.set("views", "./views");
+app.set("view engine", "hbs")
+app.set("views", "./views")
 
-app.use(express.static("public"));
+app.use(express.static("public"))
 app.use(express.json())
 app.use(express.urlencoded({extended: true}))
 
-/*********** API PRODUCTOS *************/
 
-const productos = []
+/*********** END POINTS *************/
 
-/*********** RENDER HANDLEBARS *************/
+app.get("/", listarProductos)
 
-app.get("/", (req, res) => {
-    //Sirve el cuerpo de la página "main.hbs" en el contenedor "index.hbs"
-    if (productos != []) {
-        res.render("main", { listProd: productos, listExists: true } );
-    } else {
-        res.render("main", { listProd: productos, listExists: false } );
-    }
-});
-
-/********** Me devuelve el array de productos entero **********/
 
 app.get("/productos", (req, res) => {
     res.redirect("/")
 })
 
-/********** Guarda un producto nuevo en el array productos **********/
+app.post("/productos", agregarProductos)
 
-app.post("/productos", (req, res) => {
-    req.body = {...req.body, id: productos.length + 1}
-    productos.push(req.body)
-    // productos[productos.length].id = productos.length
-    // res.json(res.body)
-    res.render("main", { listProd: productos, listExists: true } );
-    
-})
 
 /*************SERVER LISTEN***********/
 

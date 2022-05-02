@@ -4,18 +4,22 @@
     <table class="table table-striped">
         <thead>
             <tr>
+            <th scope="col">ID</th>
             <th scope="col">Nombre</th>
+            <th scope="col">Código</th>
             <th scope="col">Precio</th>
-            <th scope="col">Imagen</th>
+            <th scope="col">Stock</th>
             </tr>
         </thead>
         <tbody>
             {{#if listExists}}
                 {{#each listProd}}
                     <tr>
-                        <td><strong>{{this.title}}</strong></td>
-                        <td>{{this.price}}</td>
-                        <td><img src="{{this.thumbnail}}" alt="{{this.title}}" title="{{this.title}}" height="100" width="100"/></td>
+                        <td>{{this.id}}</td>
+                        <td><strong>{{this.nombre}}</strong></td>
+                        <td>{{this.codigo}}</td>
+                        <td>{{this.precio}}</td>
+                        <td>{{this.stock}}</td>
                     </tr>
                 {{/each}}
             {{else}}
